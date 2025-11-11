@@ -7,6 +7,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -42,6 +43,7 @@ t = 0.0
 cy = HEIGHT / 2.0
 
 while True:
+    switcher.check_switch()
     t += 0.12
     for y in range(HEIGHT):
         for x in range(WIDTH):

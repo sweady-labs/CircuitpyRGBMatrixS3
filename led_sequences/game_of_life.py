@@ -7,6 +7,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -44,7 +45,9 @@ for x in range(WIDTH):
         grid[x][y] = random.randint(0, 1)
 
 gen = 0
+
 while True:
+    switcher.check_switch()
     new_grid = [[0]*HEIGHT for _ in range(WIDTH)]
     for x in range(WIDTH):
         for y in range(HEIGHT):

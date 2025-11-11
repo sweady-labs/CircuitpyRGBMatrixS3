@@ -8,6 +8,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -43,6 +44,7 @@ particles = []
 next_firework = 0
 
 while True:
+    switcher.check_switch()
     for y in range(HEIGHT):
         for x in range(WIDTH):
             if bitmap[x, y] > 0:

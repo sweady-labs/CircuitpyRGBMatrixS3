@@ -7,6 +7,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -37,6 +38,7 @@ cx, cy = WIDTH / 2.0, HEIGHT / 2.0
 t = 0.0
 
 while True:
+    switcher.check_switch()
     t += 0.08
     pulse = (math.sin(t * 1.2) + 1.0) * 0.5
     hue = (t * 0.3) % 6.0

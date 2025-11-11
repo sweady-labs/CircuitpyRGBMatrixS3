@@ -7,6 +7,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -21,18 +22,12 @@ matrix = rgbmatrix.RGBMatrix(
     clock_pin=board.MTX_CLK, latch_pin=board.MTX_LAT, output_enable_pin=board.MTX_OE)
 
 display = framebufferio.FramebufferDisplay(matrix, auto_refresh=True)
-bitmap = displayio.Bitmap(WIDTH, HEIGHT, 256)
-palette = displayio.Palette(256)
 
+bitmap = displayio.Bitmap(WIDTH, HEIGHT, 256)
+
+palette = displayio.Palette(256)
 for i in range(256):
-    h = i / 256.0 * 6
-    if h < 1: r, g, b = 255, int(h*255), 0
-    elif h < 2: r, g, b = int((2-h)*255), 255, 0
-    elif h < 3: r, g, b = 0, 255, int((h-2)*255)
-    elif h < 4: r, g, b = 0, int((4-h)*255), 255
-    elif h < 5: r, g, b = int((h-4)*255), 0, 255
-    else: r, g, b = 255, 0, int((6-h)*255)
-    palette[i] = (r << 16) | (g << 8) | b
+    palette[i] = (i << 16) | (i << 8) | i  # grayscale
 
 tg = displayio.TileGrid(bitmap, pixel_shader=palette)
 group = displayio.Group()
@@ -43,17 +38,22 @@ cx, cy = WIDTH / 2.0, HEIGHT / 2.0
 t = 0.0
 
 while True:
-    t += 0.06
-    for y in range(HEIGHT):
-        for x in range(WIDTH):
-            dx, dy = x - cx, y - cy
-            angle = math.atan2(dy, dx) + t
-            dist = math.sqrt(dx*dx + dy*dy)
-            
-            mirror_angle = angle % (math.pi / 3)
-            v = math.sin(mirror_angle * 6 + dist * 0.3 - t * 2) * 0.5 + 0.5
-            v += math.sin(dist * 0.2 + t) * 0.3
-            
-            bitmap[x, y] = int((v * 0.7 + 0.15) * 255) % 256
-    
-    time.sleep(0.03)
+    try:
+        switcher.check_switch()
+        t += 0.06
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                dx, dy = x - cx, y - cy
+                angle = math.atan2(dy, dx) + t
+                dist = math.sqrt(dx*dx + dy*dy)
+                if dist == 0:
+                    bitmap[x, y] = 0
+                else:
+                    r = int(128 + 127 * math.sin(angle * 3))
+                    g = int(128 + 127 * math.sin(angle * 3 + 2))
+                    b = int(128 + 127 * math.sin(angle * 3 + 4))
+                    color = (r + g + b) // 3
+                    bitmap[x, y] = color % 256
+    except Exception as e:
+        print(f"Animation error: {e}")
+        time.sleep(1)

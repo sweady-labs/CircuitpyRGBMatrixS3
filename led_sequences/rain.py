@@ -7,6 +7,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -44,6 +45,7 @@ for i in range(40):
                   random.uniform(0.8, 1.5)])
 
 while True:
+    switcher.check_switch()
     # fade trails
     for y in range(HEIGHT):
         for x in range(WIDTH):

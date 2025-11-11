@@ -4,6 +4,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 # Provide hypot fallback for CircuitPython builds without math.hypot
 try:
@@ -84,7 +85,9 @@ def in_star(x, y, zoom, thickness=0.9):
 
 # --- Animation Loop ---
 t = 0.0
+
 while True:
+    switcher.check_switch()
     # advance time; increased from 0.04 -> 0.36 to make the animation ~9× faster
     # (previously set to 0.12 for 3× speed; user requested 'more speed')
     t += 0.36

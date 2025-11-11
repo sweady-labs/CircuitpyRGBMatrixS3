@@ -1,0 +1,4 @@
+# WiFi credentials for CircuitPython
+# Replace with your actual network SSID and password
+CIRCUITPY_WIFI_SSID = "EELLM_HomeWire_1"
+CIRCUITPY_WIFI_PASSWORD = "00364695438437722446"

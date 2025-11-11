@@ -4,6 +4,7 @@ import displayio
 import digitalio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 # Compatibility shim: older CircuitPython examples used display.show(group).
 # In newer releases .show() was removed in favor of assigning display.root_group.
@@ -97,7 +98,10 @@ for yy in range(HEIGHT):
     for xx in range(WIDTH):
         bitmap[xx, yy] = 7
 print("Showing full-white test for 5 seconds")
-time.sleep(5)
+# Replace a single long sleep with a short-loop so the background webserver
+# can be polled while the animation shows the test pattern.
+for _ in range(50):
+    time.sleep(0.1)
 
 # Restore checker-ish pattern to start animation
 for yy in range(HEIGHT):
@@ -108,6 +112,8 @@ x = 0
 color_index = 1
 
 while True:
+    switcher.check_switch()
+    
     # clear
     for y in range(HEIGHT):
         for xx in range(WIDTH):

@@ -21,6 +21,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 # --- display init ---
 displayio.release_displays()
@@ -112,7 +113,9 @@ def draw_streak(x0, y0, x1, y1, color_idx=1, steps_cap=MAX_STREAK):
             bitmap[px, py] = color_idx
 
 # Main loop
+
 while True:
+    switcher.check_switch()
     # clear frame
     for y in range(HEIGHT):
         for x in range(WIDTH):

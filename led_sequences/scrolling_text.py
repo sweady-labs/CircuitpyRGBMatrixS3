@@ -8,6 +8,7 @@ import framebufferio
 import rgbmatrix
 from adafruit_display_text import label
 import terminalio
+import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -33,6 +34,7 @@ group.append(text_area)
 display.root_group = group
 
 while True:
+    switcher.check_switch()
     text_area.x -= 1
     if text_area.x < -len(text) * 6:
         text_area.x = WIDTH

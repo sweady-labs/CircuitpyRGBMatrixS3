@@ -46,6 +46,7 @@ ANIMATIONS = [
     "strange_things",
     "christmas",
     "tetris",
+    "web_control",
 ]
 
 WIDTH = 64

@@ -4,6 +4,7 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
+import led_sequences.switcher as switcher
 
 # small hypot fallback
 try:
@@ -89,7 +90,9 @@ FADE_TIME = 1.5
 
 # animation loop
 t = 0.0
+
 while True:
+    switcher.check_switch()
     # advance time (tripled speed requested by user)
     t += 2.00
 
