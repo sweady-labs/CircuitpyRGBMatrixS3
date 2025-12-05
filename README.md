@@ -1,5 +1,3 @@
-// ...existing code...
-
 # CircuitPy RGB Matrix (MatrixPortal S3)
 
 Running the LED matrix web controller on an Adafruit MatrixPortal S3.
@@ -68,5 +66,3 @@ A non-blocking CircuitPython app that runs animations on a 64×32 HUB75 RGB matr
 - Errors: open serial console to view runtime prints.
 
 License: MIT
-
-// ...existing code...
