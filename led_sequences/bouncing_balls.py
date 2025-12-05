@@ -1,99 +1,15 @@
 """
 bouncing_balls.py - Physics simulation with gravity and bounce
 """
-print("Bouncing balls starting")
 import time
 import random
 import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
+# Display setup
 displayio.release_displays()
-
-WIDTH = 64
-HEIGHT = 32
-
-matrix = rgbmatrix.RGBMatrix(
-    width=WIDTH, height=HEIGHT, bit_depth=4,
-    rgb_pins=[board.MTX_R1, board.MTX_G1, board.MTX_B1,
-              board.MTX_R2, board.MTX_G2, board.MTX_B2],
-    addr_pins=[board.MTX_ADDRA, board.MTX_ADDRB, board.MTX_ADDRC, board.MTX_ADDRD],
-    clock_pin=board.MTX_CLK, latch_pin=board.MTX_LAT, output_enable_pin=board.MTX_OE)
-
-display = framebufferio.FramebufferDisplay(matrix, auto_refresh=True)
-
-bitmap = displayio.Bitmap(WIDTH, HEIGHT, 256)
-
-palette = displayio.Palette(256)
-for i in range(256):
-    palette[i] = (i, i, i)  # grayscale
-
-tg = displayio.TileGrid(bitmap, pixel_shader=palette)
-group = displayio.Group()
-group.append(tg)
-display.root_group = group
-print("Display setup done")
-
-balls = []
-for i in range(8):
-    balls.append([random.uniform(2, WIDTH-2), random.uniform(2, HEIGHT-2),
-                  random.uniform(-2, 2), random.uniform(-2, 2), i % 7 + 1])
-
-GRAVITY = 0.3
-BOUNCE = 0.85
-
-print("Starting animation loop")
-iteration = 0
-while True:
-    try:
-        switcher.check_switch()
-        for y in range(HEIGHT):
-            for x in range(WIDTH):
-                bitmap[x, y] = 0
-        
-        for ball in balls:
-            x, y, vx, vy, col = ball
-            vy += GRAVITY
-            x += vx
-            y += vy
-            
-            if y >= HEIGHT - 1:
-                y = HEIGHT - 1
-                vy = -vy * BOUNCE
-            if y < 0:
-                y = 0
-                vy = -vy * BOUNCE
-            if x >= WIDTH - 1:
-                x = WIDTH - 1
-                vx = -vx * BOUNCE
-            if x < 0:
-                x = 0
-                vx = -vx * BOUNCE
-            
-            ball[0], ball[1], ball[2], ball[3] = x, y, vx, vy
-            ix, iy = int(x), int(y)
-            if 0 <= ix < WIDTH and 0 <= iy < HEIGHT:
-                bitmap[ix, iy] = min(255, col * 40)  # Make brighter, clamp to 255
-        
-        time.sleep(0.03)
-        iteration += 1
-        if iteration % 100 == 0:
-            print(f"Loop iteration {iteration}")
-    except Exception as e:
-        print(f"Animation error: {e}")
-        time.sleep(1)
-import time
-import random
-import board
-import displayio
-import framebufferio
-import rgbmatrix
-import led_sequences.switcher as switcher
-
-displayio.release_displays()
-
 WIDTH = 64
 HEIGHT = 32
 
@@ -122,6 +38,7 @@ group = displayio.Group()
 group.append(tg)
 display.root_group = group
 
+# Animation setup
 balls = []
 for i in range(8):
     balls.append([random.uniform(2, WIDTH-2), random.uniform(2, HEIGHT-2),
@@ -130,38 +47,52 @@ for i in range(8):
 GRAVITY = 0.3
 BOUNCE = 0.85
 
-while True:
-    try:
-        switcher.check_switch()
-        for y in range(HEIGHT):
-            for x in range(WIDTH):
-                bitmap[x, y] = 0
+# Main loop with web server integration
+print("Starting animation...")
+
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "balls": [[random.uniform(2, WIDTH-2), random.uniform(2, HEIGHT-2),
+                   random.uniform(-2, 2), random.uniform(-2, 2), i % 7 + 1] for i in range(8)],
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    balls = state["balls"]
+    
+    # Clear display
+    for y in range(HEIGHT):
+        for x in range(WIDTH):
+            bitmap[x, y] = 0
+    
+    # Update and draw balls
+    for ball in balls:
+        x, y, vx, vy, col = ball
+        vy += GRAVITY
+        x += vx
+        y += vy
         
-        for ball in balls:
-            x, y, vx, vy, col = ball
-            vy += GRAVITY
-            x += vx
-            y += vy
-            
-            if y >= HEIGHT - 1:
-                y = HEIGHT - 1
-                vy = -vy * BOUNCE
-            if y < 0:
-                y = 0
-                vy = -vy * BOUNCE
-            if x >= WIDTH - 1:
-                x = WIDTH - 1
-                vx = -vx * BOUNCE
-            if x < 0:
-                x = 0
-                vx = -vx * BOUNCE
-            
-            ball[0], ball[1], ball[2], ball[3] = x, y, vx, vy
-            ix, iy = int(x), int(y)
-            if 0 <= ix < WIDTH and 0 <= iy < HEIGHT:
-                bitmap[ix, iy] = col
+        if y >= HEIGHT - 1:
+            y = HEIGHT - 1
+            vy = -vy * BOUNCE
+        if y < 0:
+            y = 0
+            vy = -vy * BOUNCE
+        if x >= WIDTH - 1:
+            x = WIDTH - 1
+            vx = -vx * BOUNCE
+        if x < 0:
+            x = 0
+            vx = -vx * BOUNCE
         
-        time.sleep(0.03)
-    except Exception as e:
-        print(f"Animation error: {e}")
-        time.sleep(1)
+        ball[0], ball[1], ball[2], ball[3] = x, y, vx, vy
+        ix, iy = int(x), int(y)
+        if 0 <= ix < WIDTH and 0 <= iy < HEIGHT:
+            bitmap[ix, iy] = col
+    
+    state["balls"] = balls
+    return state

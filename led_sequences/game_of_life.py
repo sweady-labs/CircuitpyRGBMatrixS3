@@ -7,7 +7,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -46,8 +45,21 @@ for x in range(WIDTH):
 
 gen = 0
 
-while True:
-    switcher.check_switch()
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "grid": [[random.randint(0, 1) for _ in range(HEIGHT)] for _ in range(WIDTH)],
+        "gen": 0,
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    grid = state["grid"]
+    gen = state["gen"]
+    
     new_grid = [[0]*HEIGHT for _ in range(WIDTH)]
     for x in range(WIDTH):
         for y in range(HEIGHT):
@@ -80,4 +92,6 @@ while True:
                 if random.random() < 0.05:
                     grid[x][y] = 1
     
-    time.sleep(0.1)
+    state["grid"] = grid
+    state["gen"] = gen
+    return state

@@ -7,7 +7,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -44,8 +43,19 @@ for i in range(40):
     drops.append([random.randint(0, WIDTH-1), random.randint(-10, HEIGHT-1), 
                   random.uniform(0.8, 1.5)])
 
-while True:
-    switcher.check_switch()
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "drops": [[random.randint(0, WIDTH-1), random.randint(-10, HEIGHT-1), random.uniform(0.8, 1.5)] for _ in range(40)],
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    drops = state["drops"]
+    
     # fade trails
     for y in range(HEIGHT):
         for x in range(WIDTH):
@@ -66,4 +76,5 @@ while True:
             if 0 <= ix < WIDTH and 0 <= iy < HEIGHT:
                 bitmap[ix, iy] = 7
     
-    time.sleep(0.04)
+    state["drops"] = drops
+    return state

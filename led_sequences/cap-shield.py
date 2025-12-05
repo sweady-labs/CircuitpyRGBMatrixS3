@@ -4,7 +4,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 # Provide hypot fallback for CircuitPython builds without math.hypot
 try:
@@ -86,17 +85,23 @@ def in_star(x, y, zoom, thickness=0.9):
 # --- Animation Loop ---
 t = 0.0
 
-while True:
-    switcher.check_switch()
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "t": 0.0,
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    t = state["t"]
+    
     # advance time; increased from 0.04 -> 0.36 to make the animation ~9× faster
-    # (previously set to 0.12 for 3× speed; user requested 'more speed')
     t += 0.36
 
     # --- Smooth sinusoidal zoom (flowing, no break) ---
-    # Use a sine wave for continuous derivatives so the zoom doesn't
-    # 'jump' between iterations. Center at 1.2, amplitude 0.4 -> range
-    # 0.8 .. 1.6, and a zoom speed multiplier so you can tune how fast
-    # the zoom cycles independently of the global time step.
     zoom_speed = 0.9
     zoom = 1.2 + 0.4 * math.sin(t * zoom_speed)
 
@@ -108,8 +113,6 @@ while True:
     r_inner_mod = r_inner * (0.93 + 0.09 * (1 - pulse))
 
     # --- Smooth color rotation for rings (consistent mapping) ---
-    # Interpolate between two color schemes for outer/mid/inner so the
-    # palette indices correspond consistently to rings and don't jump.
     def lerp(a, b, f):
         return int(a + (b - a) * f)
 
@@ -125,13 +128,9 @@ while True:
         b = lerp(ba, bb, f)
         return (r << 16) | (g << 8) | b
 
-    # mix factor cycles smoothly 0..1
-    # Start the sine phase shifted so at t=0 mix==0 (use schemeA initially)
     mix = (math.sin(t * 0.25 - math.pi/2) + 1.0) * 0.5
-    # two color schemes to blend between (A -> B)
-    schemeA = [0x1030FF, 0xFFFFFF, 0xFF2030]  # blue, white, red
-    schemeB = [0xFF2030, 0x1030FF, 0xFFFFFF]  # red, blue, white
-    # update palette indices 1..3 to map to outer/mid/inner respectively
+    schemeA = [0x1030FF, 0xFFFFFF, 0xFF2030]
+    schemeB = [0xFF2030, 0x1030FF, 0xFFFFFF]
     for i in range(3):
         palette[1 + i] = lerp_color(schemeA[i], schemeB[i], mix)
     outer_col = 1
@@ -145,7 +144,7 @@ while True:
             dx = x - cx
             r = hypot(dx, dy) * zoom
 
-            c = 0  # background
+            c = 0
             if r < r_outer_mod:
                 c = outer_col
             if r < r_mid_mod:
@@ -153,9 +152,10 @@ while True:
             if r < r_inner_mod:
                 c = inner_col
             if r < r_core * zoom:
-                c = 4  # dark gray center
+                c = 4
             if in_star(x, y, zoom, thickness=0.95) and r < r_inner_mod:
-                c = 2  # white star
+                c = 2
             bitmap[x, y] = c
 
-    time.sleep(0.03)
+    state["t"] = t
+    return state

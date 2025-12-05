@@ -8,7 +8,6 @@ import framebufferio
 import rgbmatrix
 from adafruit_display_text import label
 import terminalio
-import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -33,9 +32,23 @@ group = displayio.Group()
 group.append(text_area)
 display.root_group = group
 
-while True:
-    switcher.check_switch()
-    text_area.x -= 1
-    if text_area.x < -len(text) * 6:
-        text_area.x = WIDTH
-    time.sleep(0.03)
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "x": WIDTH,
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    x = state["x"]
+    
+    text_area.x = x
+    x -= 1
+    if x < -len(text) * 6:
+        x = WIDTH
+    
+    state["x"] = x
+    return state

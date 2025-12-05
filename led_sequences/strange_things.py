@@ -14,7 +14,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 WIDTH = 64
 HEIGHT = 32
@@ -47,31 +46,31 @@ last = time.monotonic()
 t = 0.0
 
 print("Starting animation loop")
-iteration = 0
-while True:
-    try:
-        switcher.check_switch()
-        now = time.monotonic()
-        dt = now - last
-        last = now
-        t += dt
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "t": 0.0,
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    t = state["t"]
+    
+    if display_ok:
+        # Clear
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                bitmap[x, y] = 0
         
-        if display_ok:
-            # Clear
-            for y in range(HEIGHT):
-                for x in range(WIDTH):
-                    bitmap[x, y] = 0
-            
-            # Add some red static
-            for i in range(50):
-                x = random.randint(0, WIDTH-1)
-                y = random.randint(0, HEIGHT-1)
-                bitmap[x, y] = random.randint(100, 255)
-        
-        time.sleep(0.1)
-        iteration += 1
-        if iteration % 50 == 0:
-            print(f"Loop iteration {iteration}")
-    except Exception as e:
-        print(f"Animation error: {e}")
-        time.sleep(1)
+        # Add some red static
+        for i in range(50):
+            x = random.randint(0, WIDTH-1)
+            y = random.randint(0, HEIGHT-1)
+            bitmap[x, y] = random.randint(100, 255)
+    
+    t += 0.1
+    state["t"] = t
+    return state

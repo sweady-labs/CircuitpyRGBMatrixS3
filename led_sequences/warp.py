@@ -21,7 +21,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 # --- display init ---
 displayio.release_displays()
@@ -95,9 +94,6 @@ for i in range(NUM_STARS):
 DT = 0.03
 SPEED = 3.0  # visual speed multiplier (1..6 typical)
 
-# elapsed time to control joins/acceleration
-elapsed = 0.0
-
 # Helper: draw a short interpolated streak between (x0,y0) and (x1,y1)
 def draw_streak(x0, y0, x1, y1, color_idx=1, steps_cap=MAX_STREAK):
     dx = x1 - x0
@@ -114,16 +110,28 @@ def draw_streak(x0, y0, x1, y1, color_idx=1, steps_cap=MAX_STREAK):
 
 # Main loop
 
-while True:
-    switcher.check_switch()
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "stars": stars.copy(),
+        "elapsed": 0.0,
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    stars_local = state["stars"]
+    elapsed = state["elapsed"]
+    
     # clear frame
     for y in range(HEIGHT):
         for x in range(WIDTH):
             bitmap[x, y] = 0
 
     # update stars
-    # update stars
-    for s in stars:
+    for s in stars_local:
         x, y, z, col = s
         # elapsed controls acceleration and color joins
         accel = 1.0 + (MAX_ACCEL - 1.0) * min(1.0, elapsed / ACCEL_TIME)
@@ -166,6 +174,9 @@ while True:
         # write back updated star
         s[0], s[1], s[2], s[3] = x, y, z, col
 
-    # advance elapsed time and sleep
+    # advance elapsed time
     elapsed += DT
-    time.sleep(DT)
+    
+    state["stars"] = stars_local
+    state["elapsed"] = elapsed
+    return state

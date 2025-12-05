@@ -8,7 +8,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -43,13 +42,28 @@ display.root_group = group
 particles = []
 next_firework = 0
 
-while True:
-    switcher.check_switch()
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "particles": [],
+        "next_firework": 0,
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    particles = state["particles"]
+    next_firework = state["next_firework"]
+    
+    # Fade out pixels
     for y in range(HEIGHT):
         for x in range(WIDTH):
             if bitmap[x, y] > 0:
                 bitmap[x, y] = max(0, bitmap[x, y] - 1)
     
+    # Trigger new fireworks
     if next_firework <= 0:
         cx, cy = random.randint(10, WIDTH-10), random.randint(5, HEIGHT-10)
         for i in range(30):
@@ -60,6 +74,7 @@ while True:
     
     next_firework -= 1
     
+    # Update particles
     for p in particles[:]:
         x, y, vx, vy, life = p
         vy += 0.1
@@ -75,4 +90,6 @@ while True:
             if 0 <= ix < WIDTH and 0 <= iy < HEIGHT:
                 bitmap[ix, iy] = max(bitmap[ix, iy], int(life))
     
-    time.sleep(0.04)
+    state["particles"] = particles
+    state["next_firework"] = next_firework
+    return state

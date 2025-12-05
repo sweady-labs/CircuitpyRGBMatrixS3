@@ -7,7 +7,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -45,15 +44,24 @@ for x in range(WIDTH):
         streams.append([x, random.randint(-20, 0), random.uniform(0.5, 1.2), 
                        random.randint(5, 15)])
 
-print("[matrix_rain] Starting animation loop")
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "frame": 0,
+        "streams": streams.copy() if streams else [],
+    }
 
-while True:
-    switcher.check_switch()
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    
+    # Fade out all pixels
     for y in range(HEIGHT):
         for x in range(WIDTH):
             if bitmap[x, y] > 0:
                 bitmap[x, y] = max(0, bitmap[x, y] - 1)
     
+    # Update streams
     for s in streams:
         x, y, speed, length = s
         y += speed
@@ -74,9 +82,10 @@ while True:
                     else:
                         bitmap[x, yy] = max(bitmap[x, yy], 5 - i // 2)
     
+    # Maybe add new stream
     if len(streams) < WIDTH * 0.4 and random.random() < 0.1:
         x = random.randint(0, WIDTH-1)
         streams.append([x, random.randint(-10, 0), random.uniform(0.5, 1.2),
                        random.randint(5, 15)])
     
-    time.sleep(0.05)
+    return state

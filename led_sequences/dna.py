@@ -7,7 +7,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 displayio.release_displays()
 
@@ -42,8 +41,19 @@ display.root_group = group
 t = 0.0
 cy = HEIGHT / 2.0
 
-while True:
-    switcher.check_switch()
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "t": 0.0,
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    t = state["t"]
+    
     t += 0.12
     for y in range(HEIGHT):
         for x in range(WIDTH):
@@ -69,4 +79,5 @@ while True:
                 if 0 <= yy < HEIGHT:
                     bitmap[ix1, yy] = 7
     
-    time.sleep(0.03)
+    state["t"] = t
+    return state

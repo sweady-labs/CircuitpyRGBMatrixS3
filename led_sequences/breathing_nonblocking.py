@@ -1,5 +1,6 @@
 """
-breathing.py - Pulsing geometric patterns with color cycling
+breathing_nonblocking.py - Example non-blocking animation
+This version uses state machine pattern instead of while True loop
 """
 import time
 import math
@@ -8,6 +9,7 @@ import displayio
 import framebufferio
 import rgbmatrix
 
+# Initialize display ONCE at module import
 displayio.release_displays()
 
 WIDTH = 64
@@ -74,4 +76,12 @@ def update_animation(state):
             else:
                 bitmap[x, y] = 0
     
+    # Return updated state
     return state
+
+# Old blocking code for reference (commented out):
+"""
+while True:
+    t += 0.08
+    ... draw frame ...
+"""

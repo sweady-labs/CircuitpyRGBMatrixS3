@@ -1,7 +1,6 @@
 import microcontroller
 import supervisor
 import board
-import keypad
 
 # List of available animations
 ANIMATIONS = [
@@ -29,15 +28,26 @@ current_index = microcontroller.nvm[0]
 if current_index >= len(ANIMATIONS):
     current_index = 0
 
-# Initialize buttons
-try:
-    buttons = keypad.Keys((board.BUTTON_UP, board.BUTTON_DOWN), value_when_pressed=False, pull=True)
-except Exception as e:
-    print(f"Button init failed: {e}")
-    buttons = None
+# Lazy-load buttons (only when needed)
+buttons = None
+buttons_initialized = False
+
+def _init_buttons():
+    """Initialize buttons on first use"""
+    global buttons, buttons_initialized
+    if buttons_initialized:
+        return
+    buttons_initialized = True
+    try:
+        import keypad
+        buttons = keypad.Keys((board.BUTTON_UP, board.BUTTON_DOWN), value_when_pressed=False, pull=True)
+    except Exception as e:
+        print(f"Button init failed: {e}")
+        buttons = None
 
 def check_switch():
     """Check for button presses and switch animation if needed."""
+    _init_buttons()
     if not buttons:
         return False
     try:

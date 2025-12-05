@@ -4,7 +4,6 @@ import displayio
 import digitalio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 # Compatibility shim: older CircuitPython examples used display.show(group).
 # In newer releases .show() was removed in favor of assigning display.root_group.
@@ -87,7 +86,6 @@ for yy in range(HEIGHT):
         bitmap[xx, yy] = 7 if ((xx + yy) % 6) < 3 else 1
 
 
-# OLD (removed): display.show(group)
 display.root_group = group  # ✅ new way
 
 print("Display root_group assigned; starting main loop")
@@ -98,8 +96,6 @@ for yy in range(HEIGHT):
     for xx in range(WIDTH):
         bitmap[xx, yy] = 7
 print("Showing full-white test for 5 seconds")
-# Replace a single long sleep with a short-loop so the background webserver
-# can be polled while the animation shows the test pattern.
 for _ in range(50):
     time.sleep(0.1)
 
@@ -111,8 +107,20 @@ for yy in range(HEIGHT):
 x = 0
 color_index = 1
 
-while True:
-    switcher.check_switch()
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "x": 0,
+        "color_index": 1,
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    x = state["x"]
+    color_index = state["color_index"]
     
     # clear
     for y in range(HEIGHT):
@@ -127,8 +135,10 @@ while True:
     if x % WIDTH == 0:
         color_index = 1 + (color_index % 7)
 
-    # occasional heartbeat on serial so we can see the loop is running
+    # occasional heartbeat on serial
     if x % (WIDTH * 10) == 0:
         print("loop x=", x, "color=", color_index)
 
-    time.sleep(0.03)
+    state["x"] = x
+    state["color_index"] = color_index
+    return state

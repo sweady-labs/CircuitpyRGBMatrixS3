@@ -8,7 +8,6 @@ import board
 import displayio
 import framebufferio
 import rgbmatrix
-import led_sequences.switcher as switcher
 
 WIDTH = 64
 HEIGHT = 32
@@ -41,38 +40,42 @@ blocks = []
 colors = [50, 100, 150, 200]  # different shades
 
 print("Starting animation loop")
-iteration = 0
-while True:
-    try:
-        switcher.check_switch()
-        if display_ok:
-            # Clear
-            for y in range(HEIGHT):
-                for x in range(WIDTH):
-                    bitmap[x, y] = 0
-            
-            # Add new block occasionally
-            if random.random() < 0.1 and len(blocks) < 10:
-                blocks.append([random.randint(0, WIDTH-4), 0, random.choice(colors), random.randint(2, 4)])
-            
-            # Update blocks
-            new_blocks = []
-            for block in blocks:
-                block[1] += 1  # fall
-                if block[1] + block[3] < HEIGHT:
-                    new_blocks.append(block)
-                # Draw block
-                for bx in range(block[3]):
-                    for by in range(block[3]):
-                        ix, iy = block[0] + bx, block[1] + by
-                        if 0 <= ix < WIDTH and 0 <= iy < HEIGHT:
-                            bitmap[ix, iy] = block[2]
-            blocks = new_blocks
+
+def init_animation():
+    """Initialize animation state"""
+    return {
+        "blocks": [],
+        "frame": 0,
+    }
+
+def update_animation(state):
+    """Update one frame and return new state"""
+    state["frame"] += 1
+    blocks = state["blocks"]
+    
+    if display_ok:
+        # Clear
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                bitmap[x, y] = 0
         
-        time.sleep(0.1)
-        iteration += 1
-        if iteration % 100 == 0:
-            print(f"Loop iteration {iteration}")
-    except Exception as e:
-        print(f"Animation error: {e}")
-        time.sleep(1)
+        # Add new block occasionally
+        if random.random() < 0.1 and len(blocks) < 10:
+            blocks.append([random.randint(0, WIDTH-4), 0, random.choice(colors), random.randint(2, 4)])
+        
+        # Update blocks
+        new_blocks = []
+        for block in blocks:
+            block[1] += 1  # fall
+            if block[1] + block[3] < HEIGHT:
+                new_blocks.append(block)
+            # Draw block
+            for bx in range(block[3]):
+                for by in range(block[3]):
+                    ix, iy = block[0] + bx, block[1] + by
+                    if 0 <= ix < WIDTH and 0 <= iy < HEIGHT:
+                        bitmap[ix, iy] = block[2]
+        blocks = new_blocks
+    
+    state["blocks"] = blocks
+    return state
