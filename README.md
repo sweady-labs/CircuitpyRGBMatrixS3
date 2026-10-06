@@ -1,104 +1,100 @@
-# CircuitPy RGB Matrix (MatrixPortal S3)
+# LED matrix in the hallway (MatrixPortal S3)
 
-Running the LED matrix web controller on an Adafruit MatrixPortal S3.
+CircuitPython firmware for an Adafruit MatrixPortal S3 with a 64×32 HUB75 RGB matrix. It plays scenes –
+a clock, a scrolling message, the status of the home hub, ambient and effect scenes, self-playing games,
+Christmas scenes – and is controlled from a web interface in the home network.
 
-## What this is
-A non-blocking CircuitPython app that runs animations on a 64×32 HUB75 RGB matrix and exposes a simple web UI / JSON API so you can change animations in real time without blocking the HTTP server.
+- **Web interface:** <http://ledmatrix.local/> (or the IP of the board, currently `192.168.178.49`):
+  live picture of the matrix, scenes with previews, brightness, on/off, scrolling message,
+  automatic scene change and night mode. Works on a phone.
+- **Buttons on the board:** UP shows the next scene, DOWN switches the matrix on or off.
+- After a restart or power cut the last scene comes back by itself; all settings survive.
 
-## Hardware
-- Adafruit MatrixPortal S3  
-- 64×32 HUB75 RGB LED matrix (proper 5V power supply)  
-- HUB75 ribbon/cable to the MatrixPortal S3 connector
+## Hardware and setup
 
-## Software
-- CircuitPython (8.x / 9.x recommended)  
-- Copy needed libraries into `/lib` (from Adafruit bundle):
-  - `adafruit_httpserver`
-  - `adafruit_display_text`
-  - `adafruit_bitmap_font`
-  - `adafruit_requests` and `adafruit_connection_manager` (for the hub status)
-  - other dependencies used by animations
-- The files in `lib/` come from the 10.x bundle (`adafruit-circuitpython-bundle-10.x-mpy`). For another
-  CircuitPython version, take them from the matching bundle.
+- Adafruit MatrixPortal S3, 64×32 HUB75 matrix, 5 V power supply for the matrix
+- CircuitPython 10.x on the board
 
-## Quick setup
-1. Flash CircuitPython to the MatrixPortal S3.  
-2. Copy project files to CIRCUITPY:
-   - `code.py`, `boot.py`, `settings.toml`, `web/`, `led_sequences/`, `lib/`  
-3. Edit `settings.toml`:
+1. Copy the firmware to the board (it appears as `CIRCUITPY`):
+   ```bash
+   tools/deploy.sh
    ```
-   CIRCUITPY_WIFI_SSID = "your_ssid"
-   CIRCUITPY_WIFI_PASSWORD = "your_password"
-   HUB_URL = "http://<hub-ip>:5000/api/zusammenfassung"
-   HUB_API_TOKEN = ""
+   This copies `code.py`, `app/`, `scenes/`, `web/` and the libraries from `lib/`, and removes the files
+   of the first version. `settings.toml` on the board is never touched.
+2. Create `settings.toml` on the board (the one in the repo only has placeholders):
+   ```toml
+   CIRCUITPY_WIFI_SSID = "..."
+   CIRCUITPY_WIFI_PASSWORD = "..."
+   HUB_URL = "http://192.168.178.111:5000/api/zusammenfassung"   # for the scene Hub-Status
+   HUB_API_TOKEN = ""                                             # only if the hub wants one
    ```
-   `HUB_URL` and `HUB_API_TOKEN` are only needed for the hub status (see below). Keep your real values on
-   the device; the `settings.toml` in this repo only holds placeholders.
-4. Connect the HUB75 display and power the matrix with a suitable 5V supply.  
-5. Power the board; it will connect to WiFi and start the web server (IP printed to serial).
+3. The board restarts by itself after copying. The serial console shows the address.
 
-## Web UI & API
-- UI: `http://<device-ip>/` (serves `/web/index.html`)  
-- JSON endpoints:
-  - `GET /api/animations` — list available animations
-  - `GET /api/current` — current selection + play state
-  - `POST /api/set` { "name": "<anim>" } — select animation
-  - `POST /api/load-animation` — queue/start selected animation
-  - `POST /api/stop-animation` — stop current animation
-  - `GET /api/status` — elapsed/remaining time
+## API
 
-## Where to find and edit the web interface
-- Source file in the repo: `web/index.html`  
-- On the device: copy the entire `web/` folder to the CIRCUITPY root so the board can serve it (path on device: `/web/index.html`).  
-- Access from a browser on the same network at: `http://<device-ip>/` (default HTTP port 80).  
-- How to discover the device IP:
-  - Check the USB serial console after boot — the script prints the IP address when Wi‑Fi connects.
-  - Or find the device in your router's DHCP client list.
-- To customize the UI:
-  1. Edit `web/index.html` locally.
-  2. Copy the edited file(s) to the device's `/web/` folder.
-  3. The web server serves files immediately; reload the browser to see changes.
-- Static assets: If you add images, JS or CSS, place them in `/web/` alongside `index.html`.
+Everything the web interface does goes through a small JSON API, so it also works from Siri shortcuts,
+n8n or `curl`. No login – it is only reachable in the home network.
 
-## Animations
-- Animations live in `led_sequences/`  
-- Each non-blocking animation should implement:
-  - `init_animation()` → initial state dict
-  - `update_animation(state)` → draw one frame and return state
-- Add new filenames (without `.py`) to `ANIMATIONS` in `code.py` (and `boot.py` if used).
+| Request | What it does |
+| --- | --- |
+| `GET /api/state` | current scene, brightness, playlist, night mode, message, time, frames per second |
+| `GET /api/scenes` | all scenes with `id`, `title`, `group` |
+| `GET /api/frame` | the picture on the matrix right now: 64×32 pixels RGB565, little endian (4096 bytes) |
+| `POST /api/scene` | `{"id": "uhr"}` or `{"step": 1}` / `{"step": -1}` |
+| `POST /api/settings` | any of `on`, `brightness` (1-100), `playlist` `{on, minutes, scenes}`, `night` `{on, start, end, level}` |
+| `POST /api/message` | `{"text": "Essen ist fertig!", "color": "#3DDC84" or "bunt", "speed": 1-5}` – shows it at once |
 
-## Hub status
-The animation `hub_status` turns the matrix into a status display for the home hub
-([sweady-labs/home-hub](https://github.com/sweady-labs/home-hub)). Every 60 seconds it reads
-`GET /api/zusammenfassung` and shows three lines:
-
-| Line | Shows | Colors |
-| --- | --- | --- |
-| 1 | Internet: `212 Mbit`, `Online`, `Offline` | green, red if offline, grey if unknown |
-| 2 | Backup: `Backup ok`, `Backup ...` (running), `Backup alt` (stale), `Backup !!` (failed or stuck) | green, blue, yellow, red |
-| 3 | `Alles ok` or the number of hints, e.g. `2 Hinweise` | green, yellow, red if at least one is a problem |
-
-If the hub does not answer, line 1 says `Hub weg` and line 2 the reason (`keine Antw`, `HTTP 401` for a missing
-or wrong token, `HTTP 403` if the matrix is outside `HUB_API_NETWORKS`, `HUB_URL ?` if the setting is missing).
-The serial console prints the details.
-
-Settings in `settings.toml` on the device:
-- `HUB_URL` — full address of the summary endpoint, e.g. `http://<hub-ip>:5000/api/zusammenfassung`
-- `HUB_API_TOKEN` — only if the hub has `HUB_API_TOKEN` set; sent as `Authorization: Bearer …`
-
-To use it, select `hub_status` in the web UI and press Play. Unlike the other animations it has no 5 hour limit,
-and if it was the selected animation it starts again by itself after a restart or power cut.
-
-The decision what to show lives in `led_sequences/hub_lines.py`, plain Python without CircuitPython
-modules. Its tests run on a computer:
+```bash
+curl -X POST -H 'Content-Type: application/json' -d '{"text": "Essen ist fertig!"}' http://ledmatrix.local/api/message
 ```
-python3 -m unittest tests/test_hub_lines.py
+
+Invalid values are answered with status 400 and the list of `rejected` fields; valid parts are still taken.
+
+## How it is built
+
 ```
+code.py            starts the matrix, the last scene, WiFi and the web server; main loop
+app/engine.py      runs one scene at a time, frame timing, brightness, night mode, playlist
+app/gfx.py         palettes with gamma and brightness, colors, text and pixel art helpers
+app/font.py        pixel fonts (normal with umlauts, big clock digits, icons)
+app/store.py       settings as JSON in the NVM of the microcontroller
+app/clock.py       NTP and German summer/winter time
+app/web.py         HTTP API
+app/hub_lines.py   what the Hub-Status scene shows (plain Python, tested)
+scenes/            one module per scene, registered in scenes/__init__.py
+web/               index.html (the web interface) and vorschau.png (previews of all scenes)
+tools/sim/         stand-ins for displayio, bitmaptools, vectorio and ulab to run scenes on a computer
+tools/vorschau.py  renders scenes as PNG/GIF and builds web/vorschau.png
+tools/deploy.sh    copies the firmware to the board
+```
+
+The matrix is set up once in `code.py`; a scene only draws into its own `displayio.Group`. Colors in scenes are
+written as they should look; `app/gfx.py` applies gamma correction and the current brightness to every palette,
+so brightness and night mode work for all scenes without them knowing. Full screen effects are computed with
+`ulab` (numpy for microcontrollers, built into CircuitPython), everything else with sprites, shapes and palette
+animation. **How to write a scene, and what each operation costs on the board: [scenes/README.md](scenes/README.md).**
+
+## Development
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install numpy pillow   # only for simulator and previews
+.venv/bin/python tools/vorschau.py plasma                      # vorschau/plasma.gif and .png
+.venv/bin/python tools/vorschau.py --alle --sprite             # all scenes, contact sheet, web/vorschau.png
+.venv/bin/python -m unittest discover tests                    # tests (scene tests need numpy)
+tools/deploy.sh                                                # to the board
+```
+
+After adding or changing scenes, run `tools/vorschau.py --alle --sprite` so the web interface shows current previews.
+`/api/state` reports `fps` and `frame_ms` (time per frame) of the running scene – handy to check a new scene on the board.
 
 ## Troubleshooting
-- No image: check 5V power and HUB75 wiring (common ground).  
-- WiFi fail: confirm `settings.toml` credentials.  
-- Hub status says `Hub weg`: check `HUB_URL` and, if the hub uses one, `HUB_API_TOKEN`.  
-- Errors: open serial console to view runtime prints.
+
+- **No picture:** check the 5 V supply of the matrix and the HUB75 cable.
+- **Not in the WiFi:** check SSID and password in `settings.toml` on the board; the serial console shows `[WEB] no network: ...`.
+  Without WiFi the matrix keeps playing and retries every 30 seconds.
+- **Clock shows `--:--`:** no answer from `pool.ntp.org` yet; it retries every minute.
+- **Hub-Status says `Hub weg`:** check `HUB_URL` and, if the hub uses one, `HUB_API_TOKEN`
+  (`HTTP 401` = token, `HTTP 403` = the matrix is outside `HUB_API_NETWORKS` of the hub).
+- **A scene shows "Fehler":** the serial console has the traceback; `/api/state` has it in `error`.
 
 License: MIT
