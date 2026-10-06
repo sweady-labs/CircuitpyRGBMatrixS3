@@ -9,7 +9,7 @@ import displayio
 
 from app import font, gfx
 
-FPS = 40
+FPS = 30
 PREVIEW_AT = 2.5
 SPEEDS = (0, 12, 20, 30, 42, 58)  # pixels per second for speed 1..5
 BANDS = 24  # color bands across the text for glint and rainbow
