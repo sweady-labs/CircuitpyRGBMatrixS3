@@ -2,7 +2,7 @@
 
 Scenes describe colors as they should look (like on a computer screen). Pal turns them into
 what the LEDs need: gamma corrected, dimmed to the current brightness and rounded to the
-RGB565 steps of the matrix. When the brightness changes, all palettes of the running scene
+steps the matrix can show. When the brightness changes, all palettes of the running scene
 are updated at once, so scenes never have to care about brightness.
 """
 import displayio
@@ -13,17 +13,17 @@ WIDTH = 64
 HEIGHT = 32
 GAMMA = 2.2
 
-_lut5 = bytearray(256)  # red and blue have 5 bits on the matrix
-_lut6 = bytearray(256)  # green has 6 bits
+# The matrix runs with 5 bits per color (BIT_DEPTH in code.py). Green has 6 bits in RGB565, but its
+# lowest bit is not shown; rounding green to 6 bits would let dim greys light red and blue
+# without green, so they would turn magenta. So every channel gets the same 32 steps.
+_lut = bytearray(256)
 _palettes = []  # every Pal of the running scene
 
 
 def set_brightness(level):
     """level 0.0 ... 1.0; updates all palettes of the running scene."""
     for i in range(256):
-        lin = (i / 255) ** GAMMA * level
-        _lut5[i] = round(lin * 31) * 255 // 31
-        _lut6[i] = round(lin * 63) * 255 // 63
+        _lut[i] = round((i / 255) ** GAMMA * level * 31) * 255 // 31
     for pal in _palettes:
         pal.apply()
 
@@ -35,7 +35,7 @@ def forget_palettes():
 
 def out(color):
     """Color as the LEDs need it (gamma, brightness)."""
-    return (_lut5[color >> 16] << 16) | (_lut6[(color >> 8) & 255] << 8) | _lut5[color & 255]
+    return (_lut[color >> 16] << 16) | (_lut[(color >> 8) & 255] << 8) | _lut[color & 255]
 
 
 class Pal:

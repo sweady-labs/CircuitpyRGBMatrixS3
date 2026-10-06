@@ -49,9 +49,12 @@ def save_later():
 
 
 def save_if_due(nvm, settings):
+    if _due is not None and time.monotonic() >= _due:
+        save_now(nvm, settings)
+
+
+def save_now(nvm, settings):
     global _due
-    if _due is None or time.monotonic() < _due:
-        return
     _due = None
     data = json.dumps(settings).encode()
     if 5 + len(data) > len(nvm):

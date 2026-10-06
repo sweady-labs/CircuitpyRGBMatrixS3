@@ -13,6 +13,7 @@ import framebufferio
 import keypad
 import microcontroller
 import rgbmatrix
+import supervisor
 import wifi
 
 from app import clock, store
@@ -20,6 +21,9 @@ from app.engine import Engine
 
 HOSTNAME = "ledmatrix"  # http://ledmatrix.local/
 BIT_DEPTH = 5
+# A short restart every night at 04:00: after hours of running and many scene changes the memory
+# gets scattered and the heavy scenes slow down (see scenes/README.md). Takes about two seconds.
+NIGHTLY_RELOAD = (4, 0)
 
 displayio.release_displays()
 matrix = rgbmatrix.RGBMatrix(
@@ -67,7 +71,8 @@ def start_network():
 
 
 pool, server = start_network()
-next_second = time.monotonic()
+started = time.monotonic()
+next_second = started
 retry_network = next_second + 30
 
 while True:
@@ -92,6 +97,10 @@ while True:
         next_second = time.monotonic() + 1
         engine.update()
         store.save_if_due(microcontroller.nvm, settings)
+        local = clock.now()
+        if local and (local.tm_hour, local.tm_min) == NIGHTLY_RELOAD and time.monotonic() - started > 3600:
+            store.save_now(microcontroller.nvm, settings)
+            supervisor.reload()
         if server is None:
             if next_second >= retry_network:
                 retry_network = next_second + 30

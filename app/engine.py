@@ -94,6 +94,11 @@ class Engine:
         gfx.forget_palettes()
         if self.module_name in sys.modules:
             del sys.modules[self.module_name]
+            # the import also stored the module as an attribute of the package; without removing
+            # it every scene ever shown would stay in memory and make each garbage collection slower
+            package = sys.modules.get("scenes")
+            if package is not None and hasattr(package, self.scene_id):
+                delattr(package, self.scene_id)
         gc.collect()
 
     def _failed(self, e):
@@ -130,6 +135,11 @@ class Engine:
         except Exception as e:
             self._failed(e)
             return
+        # Redraw the whole screen every frame. displayio on the device misses some changed areas
+        # when many small layers move and change tiles at once (cut off sprites, leftovers);
+        # hiding and showing the root marks everything as changed. Costs at most ~7 ms.
+        self.root.hidden = True
+        self.root.hidden = False
         self.display.refresh()
         self._frames += 1
         self._busy_ns += time.monotonic_ns() - now

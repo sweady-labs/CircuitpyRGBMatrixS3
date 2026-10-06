@@ -18,7 +18,6 @@ for dir in app scenes web; do
     find "$dir" -maxdepth 1 -type f ! -name '.*' ! -name '*.md' -exec cp -X {} "$BOARD/$dir/" \;
 done
 mkdir -p "$BOARD/lib"
-cp -X lib/*.mpy "$BOARD/lib/"
 rm -rf "$BOARD/lib/adafruit_httpserver"
 cp -RX lib/adafruit_httpserver "$BOARD/lib/"
 cp -X code.py "$BOARD/code.py"  # last, so the board restarts with everything in place

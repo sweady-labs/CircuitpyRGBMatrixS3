@@ -13,7 +13,7 @@ from ulab import numpy as np
 
 from app import gfx
 
-FPS = 25
+FPS = 20
 PREVIEW_AT = 3.0
 ROWS = 36  # 32 visible rows plus 4 below the edge, where the heat is fed in
 HOT = 1023
@@ -22,6 +22,7 @@ FIRE = ((0.0, 0x000000), (0.16, 0x2E0500), (0.34, 0x9E1500), (0.52, 0xF04A00), (
         (0.86, 0xFFCC55), (1.0, 0xFFF6D8))
 WOOD = (0, 0x1E0E06, 0x3E2010, 0x6E4222, 0xB08050, 0x7A5030, 0xFF5A1F, 0xFFA040)  # 0 is transparent
 DARK, MID, LIGHT, CUT, RING, EMBER, EMBER2 = 1, 2, 3, 4, 5, 6, 7
+LOGS_TOP = 23  # the logs only cover the bottom rows; a smaller layer is quicker to redraw
 
 
 class Scene:
@@ -41,17 +42,19 @@ class Scene:
         self.spots = np.array([random.random() for _ in range(64)])
         self.flicker = 1.0
 
-        self.logs = displayio.Bitmap(64, 32, len(WOOD))
+        self.logs = displayio.Bitmap(64, 32 - LOGS_TOP, len(WOOD))
         self.wood = gfx.Pal(WOOD, transparent=(0,))
-        group.append(displayio.TileGrid(self.logs, pixel_shader=self.wood.palette))
+        group.append(displayio.TileGrid(self.logs, pixel_shader=self.wood.palette, y=LOGS_TOP))
         self.log(9, 54, 25)
         self.log(4, 40, 28)
         self.log(26, 59, 28)
-        self.embers = [(x, 24) for x in range(12, 52)] + [(x, 31) for x in range(5, 59)]
+        # (x, row in the logs layer)
+        self.embers = [(x, 24 - LOGS_TOP) for x in range(12, 52)] + [(x, 31 - LOGS_TOP) for x in range(5, 59)]
 
     def log(self, x0, x1, top):
-        """A log lying across, 4 pixels thick, with cut ends and a little bark texture."""
+        """A log lying across, 4 pixels thick, with cut ends and a little bark texture (top in screen rows)."""
         b = self.logs
+        top -= LOGS_TOP
         for y, value in ((top, LIGHT), (top + 1, MID), (top + 2, MID), (top + 3, DARK)):
             bitmaptools.fill_region(b, x0 + 1, y, x1, y + 1, value)
         for x in (x0, x1):

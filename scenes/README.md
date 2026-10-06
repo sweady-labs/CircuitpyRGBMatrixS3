@@ -77,12 +77,24 @@ So: full screen effects in ulab, preferably int16; waves along x or y as 1D arra
 broadcasting (`a.reshape((1, 64)) + b.reshape((32, 1))`); precompute what does not change; draw
 sprites and shapes instead of pixels; animate palettes.
 
+**Memory is the real limit.** The table was measured in a bare REPL. Inside the running firmware
+(WiFi, web server, matrix refresh) the same ulab operations take two to three times as long, because
+the arrays live in the external PSRAM. Every ulab operation creates a new array, and every 200-300 KB
+of such garbage the garbage collector runs for 15-25 ms. After hours of running and many scene changes
+the memory gets scattered and heavy scenes slow down further; the board restarts briefly every night
+at 04:00 to start clean. What helps: few operations per frame, int16/uint8 instead of float (half or a
+quarter of the memory), precomputed tables kept as integers, and an honest `FPS`. Check the real numbers
+on the board: `fps` and `frame_ms` in `/api/state`, or `python3 tools/messen.py <scene>`.
+
 ## Device limits
 
 - ulab: no `%` on arrays, no indexing with integer arrays, Boolean mask assignment only on 1D
   arrays, no `np.random`, no `np.abs` (use `abs()`), no `np.mod`, no `np.hypot`. Arrays made from
-  lists are float32. Converting to uint8/int16 fails if a value does not fit: clip first.
+  lists are float32. Converting to uint8/int16 fails if a value does not fit: clip first. Converting floats to integers
+  *rounds* half away from zero (0.5 -> 1, -2.7 -> -3), unlike numpy, which cuts off: don't add 0.5 yourself.
   In-place operators that would broadcast (`a += b` with a smaller `a`) fail; write `a = a + b`.
+  Keep the array on the left of a number: `300 - a` with an int16 array gives float32 on the device
+  (`a * -1 + 300` stays int16); numbers from -128 to 255 are fine on either side.
 - `bitmaptools.fill_region` raises for coordinates outside the bitmap (draw_line and draw_circle clip).
   `draw_polygon` needs `array.array("h", ...)`, not lists.
 - Python itself: no stepped slices on `str`, `tuple` or `bytes` (`"abc"[::-1]` fails; lists are fine,
@@ -90,6 +102,8 @@ sprites and shapes instead of pixels; animate palettes.
   `tests/test_scenes.py` checks the scene sources for these.
 - `math` has no `hypot`, `tau`, `isclose`, `dist`. `random` only has `random`, `randint`,
   `randrange`, `uniform`, `choice`, `getrandbits`, `seed` (no `shuffle`, no `gauss`).
+- displayio on the device misses some changed areas when many small layers move at once; the engine
+  therefore redraws the whole screen every frame (included in the ~7 ms refresh).
 - Don't read the clock for animation; use `dt`. For date-aware scenes, `app.clock.now()` gives the
   local time as `struct_time`, or `None` while the clock is not synced yet.
 

@@ -3,7 +3,8 @@
 To stay fast, most waves run along x or y only (64 or 32 values) and are spread over the screen
 by broadcasting. Only the ripple around a wandering center needs the whole screen: its sine is
 computed once for a field twice the size of the screen, and every frame looks through a window
-into it. The color scheme changes every THEME_SECONDS and blends softly into the next one.
+into it. Everything per frame is int16: cheaper than floats and far less garbage to collect.
+The color scheme changes every THEME_SECONDS and blends softly into the next one.
 """
 import math
 
@@ -12,7 +13,7 @@ from ulab import numpy as np
 
 from app import gfx
 
-FPS = 25
+FPS = 20
 PREVIEW_AT = 2.0
 THEME_SECONDS = 40
 BLEND_SECONDS = 4
@@ -33,12 +34,12 @@ class Scene:
         self.bitmap, self.pal = gfx.canvas(group, self.themes[0])
         self.xs = np.linspace(0, 1, 64)
         self.ys = np.linspace(0, 0.5, 32)
-        # ripple field, twice the screen: sin and cos of the distance from its middle, times 30
+        # ripple field, twice the screen: sin and cos of the distance from its middle, times 64
         yy = np.linspace(-0.5, 0.5, 64).reshape((64, 1))
         xx = np.linspace(-1.0, 1.0, 128).reshape((1, 128))
         distance = np.sqrt(xx * xx + yy * yy) * 16.0
-        self.ripple_sin = np.sin(distance) * 30.0
-        self.ripple_cos = np.cos(distance) * 30.0
+        self.ripple_sin = np.array(np.sin(distance) * 64.0, dtype=np.int16)
+        self.ripple_cos = np.array(np.cos(distance) * 64.0, dtype=np.int16)
         self.t = 0.0
         self.shift = 0.0
         self.theme_time = 0.0
@@ -48,21 +49,24 @@ class Scene:
         self.t += dt
         t = self.t
         # waves along x and y, and one that is the product of both (values -32..32 each)
-        wave_x = (np.sin(self.xs * 9.0 + t * 0.9) * 32.0).reshape((1, 64))
-        wave_y = (np.sin(self.ys * 13.0 - t * 0.7) * 32.0).reshape((32, 1))
-        cross_x = (np.sin(self.xs * 7.0 + t * 0.5) * 32.0).reshape((1, 64))
-        cross_y = np.cos(self.ys * 7.0 - t * 0.3).reshape((32, 1))
-        v = wave_x + wave_y + cross_x * cross_y
+        wave_x = np.array(np.sin(self.xs * 9.0 + t * 0.9) * 32.0, dtype=np.int16).reshape((1, 64))
+        wave_y = np.array(np.sin(self.ys * 13.0 - t * 0.7) * 32.0, dtype=np.int16).reshape((32, 1))
+        cross_x = np.array(np.sin(self.xs * 7.0 + t * 0.5) * 32.0, dtype=np.int16).reshape((1, 64))
+        cross_y = np.array(np.cos(self.ys * 7.0 - t * 0.3) * 32.0, dtype=np.int16).reshape((32, 1))
+        v = wave_x + wave_y + np.right_shift(cross_x * cross_y, 5)
 
-        # ripple: window into the field, sin(d - phase) = sin(d) cos(phase) - cos(d) sin(phase)
+        # ripple: window into the field, sin(d - phase) = sin(d) cos(phase) - cos(d) sin(phase);
+        # 64 * 30 * (...) is shifted back by 6 bits to -30..30
         ox = int(32 + 22 * math.sin(t * 0.31))
         oy = int(16 + 10 * math.cos(t * 0.23))
         phase = t * 1.3
-        v = v + self.ripple_sin[oy:oy + 32, ox:ox + 64] * math.cos(phase)
-        v = v - self.ripple_cos[oy:oy + 32, ox:ox + 64] * math.sin(phase)
+        c = int(math.cos(phase) * 30)
+        s = int(math.sin(phase) * 30)
+        ripple = self.ripple_sin[oy:oy + 32, ox:ox + 64] * c - self.ripple_cos[oy:oy + 32, ox:ox + 64] * s
+        v = v + np.right_shift(ripple, 6)
 
         # -126..126 -> 1..253, then shifted over time so the colors flow (uint8 wraps around)
-        index = np.array(v + 127.0, dtype=np.uint8)
+        index = np.array(v + 127, dtype=np.uint8)
         self.shift = (self.shift + dt * 22.0) % 256
         bitmaptools.arrayblit(self.bitmap, index + int(self.shift))
         self.change_theme(dt)

@@ -2,7 +2,11 @@
 
 Asks the hub every POLL_SECONDS. Address and optional token come from settings.toml (HUB_URL,
 HUB_API_TOKEN). Red lines pulse slowly, so a problem catches the eye in passing.
+
+The request is plain HTTP over a socket instead of adafruit_requests: the hub speaks plain HTTP, and
+adafruit_requests with its connection manager left the whole board measurably slower afterwards.
 """
+import json
 import math
 import os
 
@@ -16,11 +20,40 @@ REQUEST_TIMEOUT = 4
 ROWS = (1, 12, 23)
 
 
+def http_get(url, token):
+    """GET over plain HTTP/1.0, so the hub answers with the whole body and closes. Returns (status, body)."""
+    import socketpool
+    import wifi
+
+    host_port, _, path = url[len("http://"):].partition("/")
+    host, _, port = host_port.partition(":")
+    pool = socketpool.SocketPool(wifi.radio)
+    address = pool.getaddrinfo(host, int(port or 80))[0][4]
+    sock = pool.socket(pool.AF_INET, pool.SOCK_STREAM)
+    sock.settimeout(REQUEST_TIMEOUT)
+    try:
+        sock.connect(address)
+        request = "GET /%s HTTP/1.0\r\nHost: %s\r\n" % (path, host)
+        if token:
+            request += "Authorization: Bearer %s\r\n" % token
+        sock.send((request + "\r\n").encode())
+        data = bytearray()
+        chunk = bytearray(1024)
+        while True:
+            count = sock.recv_into(chunk)
+            if not count:
+                break
+            data.extend(chunk[:count])
+    finally:
+        sock.close()
+    head, _, body = bytes(data).partition(b"\r\n\r\n")
+    return int(head.split(b" ")[1]), body
+
+
 class Scene:
     def __init__(self, group, settings):
         self.url = os.getenv("HUB_URL") or ""
         self.token = os.getenv("HUB_API_TOKEN") or ""
-        self.session = None
         self.bitmap, self.pal = gfx.canvas(group, [0, 0, 0, 0])
         self.lines = [("Hub ...", GREY), ("", GREY), ("", GREY)]
         self.icons = ("net", "backup", "bell")
@@ -29,25 +62,21 @@ class Scene:
         self.phase = 0.0
 
     def fetch(self):
-        if not self.url:
+        """The hub's summary as dict, or a short error text for the display."""
+        if not self.url.startswith("http://"):
             return "HUB_URL ?"
         try:
-            if self.session is None:
-                import adafruit_connection_manager
-                import adafruit_requests
-                import wifi
-
-                pool = adafruit_connection_manager.get_radio_socketpool(wifi.radio)
-                self.session = adafruit_requests.Session(pool)
-            headers = {"Authorization": "Bearer " + self.token} if self.token else {}
-            with self.session.get(self.url, headers=headers, timeout=REQUEST_TIMEOUT) as response:
-                if response.status_code != 200:
-                    print("[HUB] HTTP %d" % response.status_code)
-                    return "HTTP %d" % response.status_code
-                return response.json()
+            status, body = http_get(self.url, self.token)
         except Exception as e:
             print("[HUB] request failed: %s" % e)
             return "keine Antw"
+        if status != 200:
+            print("[HUB] HTTP %d" % status)
+            return "HTTP %d" % status
+        try:
+            return json.loads(body.decode("utf-8"))
+        except ValueError:
+            return "kein JSON"
 
     def draw(self):
         self.bitmap.fill(0)
