@@ -1,15 +1,16 @@
 """
-hub_lines.py - Turns the home hub summary (/api/zusammenfassung) into three display lines.
+Turns the home hub summary (/api/zusammenfassung) into three display lines.
 
 Plain Python without CircuitPython modules, so it can be tested on a computer:
     python3 -m unittest tests/test_hub_lines.py
 """
 
-GREEN = 0x00AA00
-YELLOW = 0xAA7700
-RED = 0xCC0000
-BLUE = 0x0044CC
-GREY = 0x444444
+# colors as they should look; app.gfx takes care of gamma and brightness
+GREEN = 0x3DDC84
+YELLOW = 0xFFB020
+RED = 0xFF4545
+BLUE = 0x4D9DFF
+GREY = 0x7A808C
 
 # backup.status from the hub -> line on the matrix
 BACKUP = {
@@ -23,7 +24,7 @@ BACKUP = {
 
 
 def status_lines(result):
-    """Three (text, color) pairs: internet, backup, hints. At most 10 characters each (64 px, 6 px font).
+    """Three (text, color) pairs: internet, backup, hints. At most 10 characters each.
 
     result is the parsed JSON from the hub, or a short error text if the request failed.
     """

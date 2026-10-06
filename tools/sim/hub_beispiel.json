@@ -1,0 +1,68 @@
+{
+  "stand": "2026-10-06T21:40:28+02:00",
+  "status": "hinweise",
+  "status_text": "2 Hinweise",
+  "anzahl_hinweise": 2,
+  "satz": "188 Mbit/s, heute keine Ausfälle, Backup in Ordnung. 2 Hinweise: Kühlschrank liefert keine Daten; Paperless konnte 3 Dateien nicht verarbeiten.",
+  "internet": {
+    "online": true,
+    "download_mbit": 188.3,
+    "upload_mbit": 79.4,
+    "ping_ms": 12.3,
+    "gemessen": "2026-10-06T21:07:07+02:00",
+    "ausfaelle_heute": 0,
+    "ausfallzeit_heute_s": 0
+  },
+  "backup": {
+    "status": "ok",
+    "text": "Backup in Ordnung",
+    "letzter_erfolg": "2026-10-06T03:31:36+02:00",
+    "auf_dem_mac": "2026-10-05T09:13:39+03:00"
+  },
+  "kita": {
+    "lauf_ok": true,
+    "letzter_lauf": "2026-10-06T19:33:50.210Z",
+    "letzter_erfolg": "2026-10-06T19:33:50.210Z",
+    "wartend": 372,
+    "treffer": 93,
+    "offen": 93,
+    "neu": 0,
+    "neu_passend": 0,
+    "weg": 0,
+    "geaendert": 0,
+    "im_gespraech": 11,
+    "nachhaken_faellig": 0
+  },
+  "hinweise": [
+    {
+      "stufe": "warnung",
+      "bereich": "fridge",
+      "titel": "Kühlschrank liefert keine Daten",
+      "detail": "Der Exporter meldet seit mindestens 6 Stunden 0 W. Vermutlich ist der SmartThings-Token abgelaufen."
+    },
+    {
+      "stufe": "warnung",
+      "bereich": "paperless",
+      "titel": "Paperless konnte 3 Dateien nicht verarbeiten",
+      "detail": "Die Details stehen in den Paperless-Aufgaben"
+    },
+    {
+      "stufe": "info",
+      "bereich": "server",
+      "titel": "mirrorPi ist aus",
+      "detail": "Seit über 30 Tagen nicht erreichbar"
+    },
+    {
+      "stufe": "info",
+      "bereich": "paperless",
+      "titel": "1 doppelte Datei übersprungen",
+      "detail": "In den letzten 7 Tagen. Paperless hatte diese Dokumente schon."
+    },
+    {
+      "stufe": "info",
+      "bereich": "paperless",
+      "titel": "20 Dokumente im Paperless-Posteingang",
+      "detail": "16 neue in den letzten 7 Tagen"
+    }
+  ]
+}

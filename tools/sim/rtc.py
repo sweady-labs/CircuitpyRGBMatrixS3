@@ -1,0 +1,2 @@
+class RTC:
+    datetime = None

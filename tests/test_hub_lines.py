@@ -1,4 +1,4 @@
-"""Tests for led_sequences/hub_lines.py, run on a computer with plain CPython:
+"""Tests for app/hub_lines.py, run on a computer with plain CPython:
 
     python3 -m unittest tests/test_hub_lines.py
 
@@ -7,7 +7,7 @@ The sample answer follows build_summary() in sweady-labs/home-hub (dashboard/api
 import json
 import unittest
 
-from led_sequences.hub_lines import GREEN, GREY, RED, YELLOW, status_lines
+from app.hub_lines import GREEN, GREY, RED, YELLOW, status_lines
 
 ALL_FINE = json.loads("""
 {
