@@ -10,7 +10,10 @@ import displayio
 
 ANIMATIONS = ["bouncing_balls", "breathing", "cap-shield", "dna", "fireworks", "game_of_life",
               "ironman", "kaleidoscope", "matrix_rain", "moving-lines", "plasma", "rain",
-              "scrolling_text", "warp", "strange_things", "christmas", "tetris", "hub_status"]
+              "scrolling_text", "warp", "strange_things", "christmas", "tetris",
+              "candy_cane_twist", "ornament_bounce", "reindeer_run", "wreath_glow",
+              "advent_calendar", "northern_lights_christmas", "gingerbread_dance",
+              "hub_status"]
 
 MAX_ANIMATION_TIME = 18000  # 5 hours
 FRAME_TIME = 0.03  # 33ms per frame = ~30 FPS
