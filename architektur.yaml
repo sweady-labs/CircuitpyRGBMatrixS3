@@ -2,47 +2,47 @@
 # Beim Ändern der Architektur hier mitpflegen — die CI sammelt diese Datei nächtlich ein.
 
 name: CircuitpyRGBMatrixS3
-zweck: CircuitPython-Firmware fuer ein Adafruit MatrixPortal S3, die auf einer 64x32-HUB75-LED-Matrix
-  Animationen abspielt und sie ueber eine im WLAN erreichbare Web-UI und eine JSON-API in Echtzeit umschaltbar
-  macht; als Animation hub_status zeigt sie den Stand des Home Hubs an.
+zweck: CircuitPython-Firmware fuer ein Adafruit MatrixPortal S3 im Flur. Spielt auf einer 64x32-HUB75-LED-Matrix
+  Szenen ab (Uhr, Laufschrift, Hub-Status, Effekte, Spiele, Weihnachten), bedienbar ueber ein Webinterface und
+  eine JSON-API im WLAN; mit automatischem Szenenwechsel, Nachtmodus und Uhrzeit per NTP (KAN-502).
 system: led-matrix
-status: experiment
+status: aktiv
 laeuft_auf:
 - matrixportal
 bietet_an:
-- name: Web-UI LED-Matrix
+- name: Webinterface LED-Matrix
   art: webseite
-  zweck: Bedienoberflaeche im WLAN zum Auswaehlen, Starten und Stoppen der Animationen; liefert /web/index.html
-    aus (code.py:209-217, Serverstart code.py:286)
-  adresse: http://<geraete-ip>/ (Port 80)
+  zweck: 'Bedienung im WLAN: Live-Bild der Matrix, Szenen waehlen, Helligkeit, Laufschrift, automatischer Wechsel,
+    Nachtmodus. Statische Dateien aus /web (web/index.html, web/vorschau.png), Server in code.py:start_network'
+  adresse: http://ledmatrix.local/ bzw. http://<geraete-ip>/ (Port 80)
 - name: JSON-API /api/*
   art: http-api
-  zweck: Animationsliste lesen, aktuelle Auswahl und Laufzeitstatus abfragen, Animation setzen, starten
-    und stoppen (code.py:219-294). Kein Repo der Liste ruft diese API auf.
-  adresse: http://<geraete-ip>/api/animations, /api/current, /api/status (GET); /api/set, /api/load-animation,
-    /api/stop-animation (POST)
+  zweck: 'Zustand lesen, Szene wechseln, Einstellungen und Laufschrift setzen, aktuelles Bild als RGB565 (app/web.py).
+    Gedacht fuer das Webinterface und fuer Kurzbefehle im Heimnetz (Siri, n8n); ohne Anmeldung.'
+  adresse: 'http://ledmatrix.local/api/state, /api/scenes, /api/frame (GET); /api/scene, /api/settings, /api/message
+    (POST)'
 nutzt:
 - ziel: home-hub
   was: /api/zusammenfassung
   art: http
-  zweck: 'Die Animation hub_status fragt alle 60 s den Gesamtstatus ab und zeigt drei Zeilen: Internet,
-    Backup und Zahl der Hinweise. Die Matrix holt selbst, der Hub schickt nichts. Optional mit Bearer-Token
-    (KAN-19)'
-  beleg: led_sequences/hub_status.py:23-27,55-68 (HUB_URL und HUB_API_TOKEN aus settings.toml), Anzeige
-    in led_sequences/hub_lines.py, Autostart und ohne Zeitlimit in code.py:136,297-299
+  zweck: 'Die Szene hub_status fragt alle 60 s den Gesamtstatus ab und zeigt drei Zeilen: Internet, Backup und
+    Hinweise. Die Matrix holt selbst, der Hub schickt nichts. Optional mit Bearer-Token (KAN-19)'
+  beleg: scenes/hub_status.py (HUB_URL und HUB_API_TOKEN aus settings.toml), Anzeige in app/hub_lines.py
 daten:
 - was: WLAN-Zugangsdaten (SSID und Passwort)
-  wo: settings.toml im Repo bzw. /settings.toml auf dem Geraet, eingelesen in code.py:178-190
+  wo: /settings.toml auf dem Geraet, im Repo nur Platzhalter; gelesen beim Start (code.py:start_network)
   schutzbedarf: geheim
 - was: Adresse des Home Hubs und optionales API-Token (HUB_URL, HUB_API_TOKEN)
-  wo: /settings.toml auf dem Geraet, im Repo nur Platzhalter; gelesen in led_sequences/hub_status.py:26-27
+  wo: /settings.toml auf dem Geraet, im Repo nur Platzhalter; gelesen in scenes/hub_status.py
   schutzbedarf: geheim
-- was: Ausgewaehlter Animationsindex und Betriebsmodus
-  wo: NVM des Mikrocontrollers, Byte 0 und 1 (boot.py:10-23, code.py:24-30, code.py:241)
-  schutzbedarf: oeffentlich
-- was: Animationscode und Web-UI (HTML/CSS/JS)
-  wo: Dateisystem des MatrixPortal S3 (led_sequences/, web/index.html)
+- was: 'Einstellungen: aktuelle Szene, Helligkeit, Playlist, Nachtmodus und der Text der Laufschrift'
+  wo: NVM des Mikrocontrollers als JSON (app/store.py), ueber /api/state fuer jeden im WLAN lesbar
+  schutzbedarf: intern
+- was: Firmware, Szenen und Webinterface
+  wo: Dateisystem des MatrixPortal S3 (code.py, app/, scenes/, web/)
   schutzbedarf: oeffentlich
 doku:
 - pfad: README.md
-  inhalt: Was es kann und wie es bedient wird
+  inhalt: Was es kann, Einrichtung, Bedienung, API und Entwicklung
+- pfad: scenes/README.md
+  inhalt: Wie eine Szene gebaut wird, was Operationen auf dem Geraet kosten, Grenzen von ulab und Co.
