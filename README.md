@@ -16,7 +16,10 @@ A non-blocking CircuitPython app that runs animations on a 64×32 HUB75 RGB matr
   - `adafruit_httpserver`
   - `adafruit_display_text`
   - `adafruit_bitmap_font`
+  - `adafruit_requests` and `adafruit_connection_manager` (for the hub status)
   - other dependencies used by animations
+- The files in `lib/` come from the 10.x bundle (`adafruit-circuitpython-bundle-10.x-mpy`). For another
+  CircuitPython version, take them from the matching bundle.
 
 ## Quick setup
 1. Flash CircuitPython to the MatrixPortal S3.  
@@ -26,7 +29,11 @@ A non-blocking CircuitPython app that runs animations on a 64×32 HUB75 RGB matr
    ```
    CIRCUITPY_WIFI_SSID = "your_ssid"
    CIRCUITPY_WIFI_PASSWORD = "your_password"
+   HUB_URL = "http://<hub-ip>:5000/api/zusammenfassung"
+   HUB_API_TOKEN = ""
    ```
+   `HUB_URL` and `HUB_API_TOKEN` are only needed for the hub status (see below). Keep your real values on
+   the device; the `settings.toml` in this repo only holds placeholders.
 4. Connect the HUB75 display and power the matrix with a suitable 5V supply.  
 5. Power the board; it will connect to WiFi and start the web server (IP printed to serial).
 
@@ -60,9 +67,38 @@ A non-blocking CircuitPython app that runs animations on a 64×32 HUB75 RGB matr
   - `update_animation(state)` → draw one frame and return state
 - Add new filenames (without `.py`) to `ANIMATIONS` in `code.py` (and `boot.py` if used).
 
+## Hub status
+The animation `hub_status` turns the matrix into a status display for the home hub
+([sweady-labs/home-hub](https://github.com/sweady-labs/home-hub)). Every 60 seconds it reads
+`GET /api/zusammenfassung` and shows three lines:
+
+| Line | Shows | Colors |
+| --- | --- | --- |
+| 1 | Internet: `212 Mbit`, `Online`, `Offline` | green, red if offline, grey if unknown |
+| 2 | Backup: `Backup ok`, `Backup ...` (running), `Backup alt` (stale), `Backup !!` (failed or stuck) | green, blue, yellow, red |
+| 3 | `Alles ok` or the number of hints, e.g. `2 Hinweise` | green, yellow, red if at least one is a problem |
+
+If the hub does not answer, line 1 says `Hub weg` and line 2 the reason (`keine Antw`, `HTTP 401` for a missing
+or wrong token, `HTTP 403` if the matrix is outside `HUB_API_NETWORKS`, `HUB_URL ?` if the setting is missing).
+The serial console prints the details.
+
+Settings in `settings.toml` on the device:
+- `HUB_URL` — full address of the summary endpoint, e.g. `http://<hub-ip>:5000/api/zusammenfassung`
+- `HUB_API_TOKEN` — only if the hub has `HUB_API_TOKEN` set; sent as `Authorization: Bearer …`
+
+To use it, select `hub_status` in the web UI and press Play. Unlike the other animations it has no 5 hour limit,
+and if it was the selected animation it starts again by itself after a restart or power cut.
+
+The decision what to show lives in `led_sequences/hub_lines.py`, plain Python without CircuitPython
+modules. Its tests run on a computer:
+```
+python3 -m unittest tests/test_hub_lines.py
+```
+
 ## Troubleshooting
 - No image: check 5V power and HUB75 wiring (common ground).  
 - WiFi fail: confirm `settings.toml` credentials.  
+- Hub status says `Hub weg`: check `HUB_URL` and, if the hub uses one, `HUB_API_TOKEN`.  
 - Errors: open serial console to view runtime prints.
 
 License: MIT

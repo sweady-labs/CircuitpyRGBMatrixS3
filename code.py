@@ -10,7 +10,7 @@ import displayio
 
 ANIMATIONS = ["bouncing_balls", "breathing", "cap-shield", "dna", "fireworks", "game_of_life",
               "ironman", "kaleidoscope", "matrix_rain", "moving-lines", "plasma", "rain",
-              "scrolling_text", "warp", "strange_things", "christmas", "tetris"]
+              "scrolling_text", "warp", "strange_things", "christmas", "tetris", "hub_status"]
 
 MAX_ANIMATION_TIME = 18000  # 5 hours
 FRAME_TIME = 0.03  # 33ms per frame = ~30 FPS
@@ -132,8 +132,8 @@ def update_animation_frame():
     if not animation_running:
         return False
     
-    # Check timeout
-    if time.time() - animation_start_time > MAX_ANIMATION_TIME:
+    # Check timeout (not for status displays like hub_status, they should keep running)
+    if not getattr(animation_module, "NO_TIMEOUT", False) and time.time() - animation_start_time > MAX_ANIMATION_TIME:
         print("Animation timeout reached")
         stop_animation()
         return False
@@ -294,6 +294,10 @@ try:
     print("  POST /api/stop-animation")
     print("\nWEB SERVER STAYS RESPONSIVE - animations update every frame!\n")
     
+    # The hub status comes back on its own after a restart, no click in the web UI needed
+    if ANIMATIONS[current_anim_idx] == "hub_status":
+        should_load_animation = True
+
     # Main loop - ALWAYS responsive
     frame_count = 0
     while True:
