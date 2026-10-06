@@ -3,7 +3,7 @@
 CIRCUITPY_WIFI_SSID = "YOURSSID"
 CIRCUITPY_WIFI_PASSWORD = "YOURWIFIPW"
 
-# Home hub for the animation "hub_status" (address of /api/zusammenfassung in your network)
+# Home hub for the scene "hub_status" (address of /api/zusammenfassung in your network)
 HUB_URL = "http://YOURHUB:5000/api/zusammenfassung"
 # Only needed if HUB_API_TOKEN is set on the hub
 HUB_API_TOKEN = ""

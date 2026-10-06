@@ -190,6 +190,7 @@ class Engine:
             "message": s["message"],
             "time": "%02d:%02d" % (local.tm_hour, local.tm_min) if local else None,
             "fps": round(self.fps, 1),
+            "fps_target": round(1e9 / self.frame_ns),
             "frame_ms": round(self.frame_ms, 1),
             "free_kb": gc.mem_free() // 1024,
             "uptime_s": int(time.monotonic()),
