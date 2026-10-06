@@ -77,7 +77,7 @@ So: full screen effects in ulab, preferably int16; waves along x or y as 1D arra
 broadcasting (`a.reshape((1, 64)) + b.reshape((32, 1))`); precompute what does not change; draw
 sprites and shapes instead of pixels; animate palettes.
 
-## Device limits the simulator also checks
+## Device limits
 
 - ulab: no `%` on arrays, no indexing with integer arrays, Boolean mask assignment only on 1D
   arrays, no `np.random`, no `np.abs` (use `abs()`), no `np.mod`, no `np.hypot`. Arrays made from
@@ -85,6 +85,9 @@ sprites and shapes instead of pixels; animate palettes.
   In-place operators that would broadcast (`a += b` with a smaller `a`) fail; write `a = a + b`.
 - `bitmaptools.fill_region` raises for coordinates outside the bitmap (draw_line and draw_circle clip).
   `draw_polygon` needs `array.array("h", ...)`, not lists.
+- Python itself: no stepped slices on `str`, `tuple` or `bytes` (`"abc"[::-1]` fails; lists are fine,
+  `"".join(reversed(s))` works); `str` has no `rjust`, `ljust`, `zfill`, `translate`, `casefold`, `title`.
+  `tests/test_scenes.py` checks the scene sources for these.
 - `math` has no `hypot`, `tau`, `isclose`, `dist`. `random` only has `random`, `randint`,
   `randrange`, `uniform`, `choice`, `getrandbits`, `seed` (no `shuffle`, no `gauss`).
 - Don't read the clock for animation; use `dt`. For date-aware scenes, `app.clock.now()` gives the

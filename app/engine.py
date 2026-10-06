@@ -68,6 +68,11 @@ class Engine:
             self._failed(e)
         self.next_ns = 0
         self.last_ns = time.monotonic_ns()
+        self.fps = 0.0
+        self.frame_ms = 0.0
+        self._frames = 0
+        self._busy_ns = 0
+        self._fps_since = self.last_ns
         if self.settings["scene"] != scene_id:
             self.settings["scene"] = scene_id
             store.save_later()
