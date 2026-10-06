@@ -7,7 +7,7 @@ import sys
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "tools", "sim"))  # stand-ins for adafruit_httpserver and displayio
+sys.path.insert(0, os.path.join(ROOT, "tools", "sim"))  # stand-in for adafruit_httpserver
 
 from app import store, web  # noqa: E402
 

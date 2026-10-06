@@ -12,8 +12,9 @@ Static files (index.html, preview sprite) come from /web.
 from adafruit_httpserver import BAD_REQUEST_400, GET, OK_200, POST, JSONResponse, Request, Response
 
 from app import store
-from app.engine import IDS
 from scenes import SCENES
+
+IDS = [scene[0] for scene in SCENES]
 
 MINUTES = (1, 2, 5, 10, 15, 30, 60, 120)
 
