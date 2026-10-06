@@ -1,0 +1,36 @@
+# Selbstbeschreibung für das zentrale Architekturmodell (sweady-labs/systemarchitektur).
+# Beim Ändern der Architektur hier mitpflegen — die CI sammelt diese Datei nächtlich ein.
+
+name: CircuitpyRGBMatrixS3
+zweck: CircuitPython-Firmware fuer ein Adafruit MatrixPortal S3, die auf einer 64x32-HUB75-LED-Matrix
+  Animationen abspielt und sie ueber eine im WLAN erreichbare Web-UI und eine JSON-API in Echtzeit umschaltbar
+  macht.
+system: led-matrix
+status: experiment
+laeuft_auf:
+- matrixportal
+bietet_an:
+- name: Web-UI LED-Matrix
+  art: webseite
+  zweck: Bedienoberflaeche im WLAN zum Auswaehlen, Starten und Stoppen der Animationen; liefert /web/index.html
+    aus (code.py:209-217, Serverstart code.py:286)
+  adresse: http://<geraete-ip>/ (Port 80)
+- name: JSON-API /api/*
+  art: http-api
+  zweck: Animationsliste lesen, aktuelle Auswahl und Laufzeitstatus abfragen, Animation setzen, starten
+    und stoppen (code.py:219-294). Kein Repo der Liste ruft diese API auf.
+  adresse: http://<geraete-ip>/api/animations, /api/current, /api/status (GET); /api/set, /api/load-animation,
+    /api/stop-animation (POST)
+daten:
+- was: WLAN-Zugangsdaten (SSID und Passwort)
+  wo: settings.toml im Repo bzw. /settings.toml auf dem Geraet, eingelesen in code.py:178-190
+  schutzbedarf: geheim
+- was: Ausgewaehlter Animationsindex und Betriebsmodus
+  wo: NVM des Mikrocontrollers, Byte 0 und 1 (boot.py:10-23, code.py:24-30, code.py:241)
+  schutzbedarf: oeffentlich
+- was: Animationscode und Web-UI (HTML/CSS/JS)
+  wo: Dateisystem des MatrixPortal S3 (led_sequences/, web/index.html)
+  schutzbedarf: oeffentlich
+doku:
+- pfad: README.md
+  inhalt: Was es kann und wie es bedient wird
