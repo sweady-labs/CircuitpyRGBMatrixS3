@@ -4,7 +4,7 @@
 name: CircuitpyRGBMatrixS3
 zweck: CircuitPython-Firmware fuer ein Adafruit MatrixPortal S3, die auf einer 64x32-HUB75-LED-Matrix
   Animationen abspielt und sie ueber eine im WLAN erreichbare Web-UI und eine JSON-API in Echtzeit umschaltbar
-  macht.
+  macht; als Animation hub_status zeigt sie den Stand des Home Hubs an.
 system: led-matrix
 status: experiment
 laeuft_auf:
@@ -21,9 +21,21 @@ bietet_an:
     und stoppen (code.py:219-294). Kein Repo der Liste ruft diese API auf.
   adresse: http://<geraete-ip>/api/animations, /api/current, /api/status (GET); /api/set, /api/load-animation,
     /api/stop-animation (POST)
+nutzt:
+- ziel: home-hub
+  was: /api/zusammenfassung
+  art: http
+  zweck: 'Die Animation hub_status fragt alle 60 s den Gesamtstatus ab und zeigt drei Zeilen: Internet,
+    Backup und Zahl der Hinweise. Die Matrix holt selbst, der Hub schickt nichts. Optional mit Bearer-Token
+    (KAN-19)'
+  beleg: led_sequences/hub_status.py:23-27,55-68 (HUB_URL und HUB_API_TOKEN aus settings.toml), Anzeige
+    in led_sequences/hub_lines.py, Autostart und ohne Zeitlimit in code.py:136,297-299
 daten:
 - was: WLAN-Zugangsdaten (SSID und Passwort)
   wo: settings.toml im Repo bzw. /settings.toml auf dem Geraet, eingelesen in code.py:178-190
+  schutzbedarf: geheim
+- was: Adresse des Home Hubs und optionales API-Token (HUB_URL, HUB_API_TOKEN)
+  wo: /settings.toml auf dem Geraet, im Repo nur Platzhalter; gelesen in led_sequences/hub_status.py:26-27
   schutzbedarf: geheim
 - was: Ausgewaehlter Animationsindex und Betriebsmodus
   wo: NVM des Mikrocontrollers, Byte 0 und 1 (boot.py:10-23, code.py:24-30, code.py:241)

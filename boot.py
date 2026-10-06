@@ -4,10 +4,10 @@ import supervisor
 
 ANIMATIONS = ["bouncing_balls", "breathing", "cap-shield", "dna", "fireworks", "game_of_life",
               "ironman", "kaleidoscope", "matrix_rain", "moving-lines", "plasma", "rain",
-              "scrolling_text", "warp", "strange_things", "christmas", "tetris"]
+              "scrolling_text", "warp", "strange_things", "christmas", "tetris", "hub_status"]
 
 # Initialize NVM if needed
-# NVM[0] = animation index (0-16)
+# NVM[0] = animation index (0-17)
 # NVM[1] = mode (0=load animation, 1=web server, 255=first boot)
 
 try:
